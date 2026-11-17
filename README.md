@@ -30,12 +30,15 @@ A free, self-hosted tool that finds ML / AI / data internships every morning, ra
 
 If the server is off or unreachable, the Mac logs it, warns you **once** per day after 11:30, and keeps retrying. When the server is back, missed reports are copied automatically (the timer uses `Persistent=true`, so a missed run still happens).
 
-## Quick start (just try it, any OS with Python 3.8+)
+## Try it in 60 seconds (macOS, Linux, or Windows via WSL; Python 3.8+ only)
 
 ```bash
-cp master_resume.example.json master_resume.json   # then edit with your own details
-python3 internship_finder.py --no-ai                # keyword matching only, takes seconds
+git clone https://github.com/ashwyan/internship-finder-demo.git
+cd internship-finder-demo
+bash quickstart.sh          # keyword mode, no AI, no accounts, no installs
 ```
+
+It creates `master_resume.json` from the fake example, runs once, and prints the top of the report. Edit `master_resume.json` with your own details for real results. Add `--ai` (`bash quickstart.sh --ai`) to also use local Ollama if you have it. Tested with Python 3.13 and 3.14 on macOS and Ubuntu 25.10.
 
 Optional local AI: install [Ollama](https://ollama.com), then `ollama pull qwen3:4b` and `ollama pull nomic-embed-text`, and run without `--no-ai`. A full AI run took about 3 minutes on a laptop-class CPU in testing.
 
@@ -80,6 +83,18 @@ None of the extras can break the main run. A missing key skips the step, and a f
 ## Change what it searches
 
 Edit the settings at the top of `internship_finder.py`: `TERMS`, `BAY_AREA`, `OTHER_TARGETS` (cities, now the whole US), title keywords, days back, result counts, company size range, and `SCHOOL`.
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `Python 3 is missing` | Install Python 3.8+ (python.org, or `brew install python`). |
+| No matches shown | Matches you already saw are skipped. Use `--include-seen`, or delete `state.json`. |
+| `AI: off` in the report | Ollama is not running. Start it with `ollama serve`, and check `ollama list` shows `qwen3:4b`. |
+| Mac says server unreachable | Check `ssh myserver true` works with no password prompt, and your VPN is on. It retries every 30 min. |
+| Gemini step is slow or shows HTTP 429 | The free tier rate-limits. The step stops after 12 minutes and keeps what it found. |
+| Timer did not run | `systemctl --user list-timers`, and check lingering: `loginctl show-user $USER -p Linger`. |
+| No notification on Mac | Allow notifications for Script Editor / osascript in System Settings, then `tail pull.log`. |
 
 ## Limits
 
