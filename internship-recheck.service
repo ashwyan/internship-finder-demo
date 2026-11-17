@@ -1,0 +1,7 @@
+[Unit]
+Description=Weekly internship link re-check
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/python3 %h/internship-finder/recheck_links.py
+StandardOutput=append:%h/internship-finder/run.log
+StandardError=append:%h/internship-finder/run.log

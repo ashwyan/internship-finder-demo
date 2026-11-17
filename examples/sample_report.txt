@@ -1,0 +1,45 @@
+Internship report for 2026-11-16
+Open postings checked: 2118. New matches: 36.
+AI: off. Keyword matching only.
+
+PART 1. INTERNSHIP POSTINGS
+
+1. TikTok, Machine Learning Engineer Intern (Strong)
+   Location: San Jose, CA
+   Updated: 2026-11-13
+   Job link: https://lifeattiktok.com/search/7698822572474583301
+   LinkedIn, alumni: https://www.linkedin.com/search/results/people/?keywords=TikTok%20Example%20University
+   LinkedIn, people on the team: https://www.linkedin.com/search/results/people/?keywords=TikTok%20machine%20learning%20engineer
+   LinkedIn, university recruiters: https://www.linkedin.com/search/results/people/?keywords=TikTok%20university%20recruiter
+
+2. Zoox, Data Scientist Intern (Strong)
+   Location: Boston, MA; Foster City, CA
+   Updated: 2026-11-07
+   Job link: https://jobs.lever.co/zoox/85c6aec7-8da2-445d-9c4d-812365dbce97/apply
+   LinkedIn, alumni: https://www.linkedin.com/search/results/people/?keywords=Zoox%20Example%20University
+   LinkedIn, people on the team: https://www.linkedin.com/search/results/people/?keywords=Zoox%20machine%20learning%20engineer
+   LinkedIn, university recruiters: https://www.linkedin.com/search/results/people/?keywords=Zoox%20university%20recruiter
+
+3. Tinder, Machine Learning Engineer Intern (Strong)
+   Location: Palo Alto, CA
+   Updated: 2026-11-06
+   Job link: https://jobs.lever.co/matchgroup/860a839a-5be3-44dc-916f-eb2e71d67d72/apply
+   LinkedIn, alumni: https://www.linkedin.com/search/results/people/?keywords=Tinder%20Example%20University
+   LinkedIn, people on the team: https://www.linkedin.com/search/results/people/?keywords=Tinder%20machine%20learning%20engineer
+   LinkedIn, university recruiters: https://www.linkedin.com/search/results/people/?keywords=Tinder%20university%20recruiter
+
+4. PayPal, Machine Learning Engineer Intern (Strong)
+   Location: San Jose, CA
+   Updated: 2026-11-05
+   Job link: https://paypal.eightfold.ai/careers/job/274922983149
+   LinkedIn, alumni: https://www.linkedin.com/search/results/people/?keywords=PayPal%20Example%20University
+   LinkedIn, people on the team: https://www.linkedin.com/search/results/people/?keywords=PayPal%20machine%20learning%20engineer
+   LinkedIn, university recruiters: https://www.linkedin.com/search/results/people/?keywords=PayPal%20university%20recruiter
+
+5. PayPal, Data Scientist Intern (Strong)
+   Location: San Jose, CA
+   Updated: 2026-11-05
+   Job link: https://paypal.eightfold.ai/careers/job/274922982821
+   LinkedIn, alumni: https://www.linkedin.com/search/results/people/?keywords=PayPal%20Example%20University
+   LinkedIn, people on the team: https://www.linkedin.com/search/results/people/?keywords=PayPal%20machine%20learning%20engineer
+   LinkedIn, university recruiters: https://www.linkedin.com/search/results/people/?keywords=PayPal%20university%20recruiter

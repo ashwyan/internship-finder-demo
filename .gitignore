@@ -1,0 +1,10 @@
+master_resume.json
+state.json
+gemini_seen.json
+applied.txt
+output/
+reports/
+*.log
+.pull_state/
+__pycache__/
+.DS_Store

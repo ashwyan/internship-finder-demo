@@ -1,0 +1,7 @@
+[Unit]
+Description=Weekly internship link re-check (Sundays 9:30)
+[Timer]
+OnCalendar=Sun *-*-* 09:30:00
+Persistent=true
+[Install]
+WantedBy=timers.target

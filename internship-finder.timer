@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the internship finder every day at 10:17
+
+[Timer]
+OnCalendar=*-*-* 10:17:00
+Persistent=true
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

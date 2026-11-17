@@ -1,0 +1,110 @@
+{
+ "name": "Alex Example",
+ "contact": "Anytown, USA | alex@example.edu | linkedin.com/in/alex-example | github.com/alex-example",
+ "education": {
+  "school": "Example University",
+  "date": "Expected May 2028",
+  "degree": "B.S. in Data Science (in progress)",
+  "extra": "Achievements: Example Hackathon winner; Dean's List"
+ },
+ "experience": [
+  {
+   "org": "Example Health Lab",
+   "role": "Research Assistant",
+   "location": "Anytown, USA",
+   "dates": "Jan 2026 - Present",
+   "bullets": [
+    {
+     "text": "Built a Python pipeline that cleans 200K survey records and trains a gradient-boosted classifier, cutting manual review time by 60%.",
+     "tags": [
+      "ml",
+      "data"
+     ]
+    },
+    {
+     "text": "Wrote SQL reports and a small dashboard that the team uses every week.",
+     "tags": [
+      "data",
+      "swe"
+     ]
+    }
+   ]
+  }
+ ],
+ "projects": [
+  {
+   "org": "Study Group Matcher",
+   "role": "Python, scikit-learn, Flask",
+   "location": "",
+   "dates": "2025",
+   "bullets": [
+    {
+     "text": "Matched 300 students into study groups with a clustering model and a simple web form.",
+     "tags": [
+      "ml",
+      "swe"
+     ]
+    }
+   ]
+  }
+ ],
+ "activities": [
+  {
+   "org": "Data Science Club",
+   "role": "Workshop Lead",
+   "location": "",
+   "dates": "2025 - Present",
+   "bullets": [
+    {
+     "text": "Ran 6 beginner workshops on pandas and SQL for 40+ students.",
+     "tags": [
+      "data"
+     ]
+    }
+   ]
+  }
+ ],
+ "skills": [
+  {
+   "label": "Programming",
+   "items": [
+    "Python",
+    "SQL",
+    "R",
+    "Java",
+    "Bash"
+   ]
+  },
+  {
+   "label": "ML",
+   "items": [
+    "scikit-learn",
+    "PyTorch",
+    "pandas",
+    "NLP"
+   ]
+  }
+ ],
+ "pitches": {
+  "ml": {
+   "short": "I built a pipeline that cut manual review time by 60%.",
+   "long": "At Example Health Lab I built a Python pipeline over 200K records that cut manual review time by 60%."
+  },
+  "infra": {
+   "short": "I built a pipeline that cut manual review time by 60%.",
+   "long": "At Example Health Lab I built a Python pipeline over 200K records that cut manual review time by 60%."
+  },
+  "data": {
+   "short": "I built a pipeline that cut manual review time by 60%.",
+   "long": "At Example Health Lab I built a Python pipeline over 200K records that cut manual review time by 60%."
+  },
+  "nlp": {
+   "short": "I built a pipeline that cut manual review time by 60%.",
+   "long": "At Example Health Lab I built a Python pipeline over 200K records that cut manual review time by 60%."
+  },
+  "swe": {
+   "short": "I built a pipeline that cut manual review time by 60%.",
+   "long": "At Example Health Lab I built a Python pipeline over 200K records that cut manual review time by 60%."
+  }
+ }
+}
