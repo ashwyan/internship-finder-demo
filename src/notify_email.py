@@ -7,7 +7,8 @@ from datetime import date
 from email.message import EmailMessage
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent if HERE.name == "src" else HERE   # data (resume, state, output) lives at the repo root
 cred = Path.home() / ".config/internship/gmail"
 if not cred.exists():
     print("email: no credentials file, skipped"); sys.exit(2)

@@ -24,7 +24,7 @@ if [ "$1" = "--ai" ]; then
 fi
 
 echo "Running (needs internet to read the public job lists)..."
-"$PY" internship_finder.py $ARGS
+"$PY" src/internship_finder.py $ARGS
 REPORT="$(ls -1d output/*/report.txt | tail -1)"
 echo; echo "===== top of $REPORT ====="; head -25 "$REPORT"
 echo; echo "Full report: $REPORT"

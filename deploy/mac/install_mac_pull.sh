@@ -2,7 +2,7 @@
 # Mac side: pulls reports from the server every 30 minutes and shows a macOS notification.
 # Usage:  REMOTE=myserver bash install_mac_pull.sh      (REMOTE = ssh host alias of your server)
 set -e
-HERE="$(cd "$(dirname "$0")" && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"   # this script and pull_reports.sh live together in deploy/mac
 REMOTE="${REMOTE:-myserver}"
 LABEL="com.example.internshippull"; PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 mkdir -p "$HOME/Library/LaunchAgents"

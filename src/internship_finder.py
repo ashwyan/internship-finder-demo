@@ -24,7 +24,8 @@ import urllib.request
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent if HERE.name == "src" else HERE   # data (resume, state, output) lives at the repo root
 RESUME_FILE = BASE / "master_resume.json"
 STATE_FILE = BASE / "state.json"
 OUT_DIR = BASE / "output"
@@ -43,8 +44,20 @@ MAX_SMALL_COMPANIES = 8
 # Optional: add company board names to also check them directly.
 # Greenhouse name is the part after boards.greenhouse.io/ in the careers URL.
 # Lever name is the part after jobs.lever.co/ in the careers URL.
-GREENHOUSE_BOARDS = []   # example: ["figma", "databricks"]
-LEVER_BOARDS = []        # example: ["palantir"]
+# Company boards read straight from the companies' public job APIs (direct links, no middleman).
+# Add more: the Greenhouse name is the part after boards.greenhouse.io/, Lever after jobs.lever.co/, Ashby after jobs.ashbyhq.com/.
+GREENHOUSE_BOARDS = [
+    "anthropic", "databricks", "scaleai", "stripe", "airbnb", "figma", "coinbase", "instacart", "lyft",
+    "pinterest", "reddit", "robinhood", "samsara", "duolingo", "cloudflare", "datadog", "mongodb",
+    "twilio", "roblox", "brex", "verkada", "waymo", "nuro", "neuralink",
+]
+LEVER_BOARDS = ["palantir", "zoox"]
+ASHBY_BOARDS = ["openai", "ramp", "notion", "perplexity", "cohere"]
+BOARD_NAMES = {"scaleai": "Scale AI", "openai": "OpenAI", "mongodb": "MongoDB", "datadog": "Datadog",
+               "neuralink": "Neuralink", "waymo": "Waymo", "zoox": "Zoox", "ramp": "Ramp"}
+# A second community list. Its links go through the maintainer's redirect domain, so we resolve the ones we show.
+VANSH_URL = "https://raw.githubusercontent.com/vanshb03/Summer2027-Internships/dev/.github/scripts/listings.json"
+USE_VANSH = True
 
 BAY_AREA = [
     "san francisco", "palo alto", "mountain view", "sunnyvale", "san jose", "santa clara",
@@ -129,13 +142,14 @@ def strip_html(s):
 
 
 def load_simplify():
+    out, loaded = [], 0
     for url in LISTING_URLS:
         try:
             data = fetch_json(url)
         except Exception as exc:
             print(f"Could not load {url}: {exc}", file=sys.stderr)
             continue
-        out = []
+        loaded += 1
         for x in data:
             if not x.get("active") or not x.get("is_visible", True):
                 continue
@@ -155,59 +169,125 @@ def load_simplify():
                     "updated": max(x.get("date_posted") or 0, x.get("date_updated") or 0),
                     "sponsorship": x.get("sponsorship", ""),
                     "description": "",
+                    "source": "Simplify",
                 }
             )
-        return out
-    sys.exit("Could not download the internship list. Check your internet connection and try again.")
+    if not loaded:
+        sys.exit("Could not download the internship list. Check your internet connection and try again.")
+    return out
+
+
+def load_vanshb03():
+    if not USE_VANSH:
+        return []
+    try:
+        data = fetch_json(VANSH_URL)
+    except Exception as exc:
+        print(f"Could not load second list: {exc}", file=sys.stderr)
+        return []
+    return [
+        {
+            "id": "vb-" + str(x.get("id") or x.get("url")),
+            "company": x.get("company_name", ""),
+            "title": x.get("title", ""),
+            "category": "",
+            "locations": x.get("locations") or [],
+            "url": x.get("url", ""),
+            "updated": max(x.get("date_posted") or 0, x.get("date_updated") or 0),
+            "sponsorship": x.get("sponsorship", ""),
+            "description": "",
+            "source": "vanshb03 list",
+        }
+        for x in data
+        if x.get("active") and x.get("is_visible", True) and x.get("season") in ("Summer", "Spring", "Spring/Summer")
+    ]
+
+
+def resolve_url(url):
+    """Follow a redirect to the real job page. On any problem keep the original link."""
+    if "go.vansh.nyc" not in url:
+        return url
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 internship-finder"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.geturl()
+    except Exception:
+        return url
+
+
+INTERN_RE = re.compile(r"\bintern|co-?op\b", re.I)
+
+
+def _pretty(slug):
+    return BOARD_NAMES.get(slug, slug.replace("-", " ").title())
+
+
+def _greenhouse(slug):
+    # No content=true: it is huge. The AI step reads the posting page for the few it needs.
+    jobs = fetch_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs").get("jobs", [])
+    out = []
+    for j in jobs:
+        if not INTERN_RE.search(j.get("title", "")):
+            continue
+        try:
+            ts = datetime.fromisoformat(j["updated_at"].replace("Z", "+00:00")).timestamp()
+        except Exception:
+            ts = time.time()
+        out.append({"id": f"gh-{slug}-{j.get('id')}", "company": _pretty(slug), "title": j.get("title", ""),
+                    "category": "", "locations": [(j.get("location") or {}).get("name", "")],
+                    "url": j.get("absolute_url", ""), "updated": ts, "sponsorship": "", "description": "",
+                    "source": "Greenhouse"})
+    return out
+
+
+def _lever(slug):
+    out = []
+    for j in fetch_json(f"https://api.lever.co/v0/postings/{slug}?mode=json"):
+        if not INTERN_RE.search(j.get("text", "")):
+            continue
+        out.append({"id": f"lv-{slug}-{j.get('id')}", "company": _pretty(slug), "title": j.get("text", ""),
+                    "category": (j.get("categories") or {}).get("team", ""),
+                    "locations": [(j.get("categories") or {}).get("location", "")],
+                    "url": j.get("hostedUrl", ""), "updated": (j.get("createdAt") or time.time() * 1000) / 1000,
+                    "sponsorship": "", "description": (j.get("descriptionPlain") or "")[:20000], "source": "Lever"})
+    return out
+
+
+def _ashby(slug):
+    out = []
+    for j in fetch_json(f"https://api.ashbyhq.com/posting-api/job-board/{slug}").get("jobs", []):
+        if not j.get("isListed", True) or not (INTERN_RE.search(j.get("title", "")) or j.get("employmentType") == "Intern"):
+            continue
+        try:
+            ts = datetime.fromisoformat(j["publishedAt"].replace("Z", "+00:00")).timestamp()
+        except Exception:
+            ts = time.time()
+        locs = [j.get("location", "")] + [x.get("location", "") for x in (j.get("secondaryLocations") or []) if isinstance(x, dict)]
+        if j.get("workplaceType") == "Remote":
+            locs.append("Remote")
+        out.append({"id": f"ab-{slug}-{j.get('id')}", "company": _pretty(slug), "title": j.get("title", ""),
+                    "category": j.get("team", ""), "locations": [l for l in locs if l],
+                    "url": j.get("jobUrl", ""), "updated": ts, "sponsorship": "",
+                    "description": (j.get("descriptionPlain") or "")[:20000], "source": "Ashby"})
+    return out
 
 
 def load_boards():
-    out = []
-    for slug in GREENHOUSE_BOARDS:
+    """Read every company board at the same time. One board failing never stops the others."""
+    from concurrent.futures import ThreadPoolExecutor
+
+    tasks = [(f, s) for f, boards in ((_greenhouse, GREENHOUSE_BOARDS), (_lever, LEVER_BOARDS), (_ashby, ASHBY_BOARDS)) for s in boards]
+
+    def run(t):
+        fn, slug = t
         try:
-            jobs = fetch_json(f"https://boards-api.greenhouse.io/v1/boards/{slug}/jobs?content=true").get("jobs", [])
+            return fn(slug)
         except Exception as exc:
-            print(f"Greenhouse {slug} failed: {exc}", file=sys.stderr)
-            continue
-        for j in jobs:
-            try:
-                ts = datetime.fromisoformat(j["updated_at"].replace("Z", "+00:00")).timestamp()
-            except Exception:
-                ts = time.time()
-            out.append(
-                {
-                    "id": f"gh-{slug}-{j.get('id')}",
-                    "company": slug.title(),
-                    "title": j.get("title", ""),
-                    "category": "",
-                    "locations": [(j.get("location") or {}).get("name", "")],
-                    "url": j.get("absolute_url", ""),
-                    "updated": ts,
-                    "sponsorship": "",
-                    "description": strip_html(j.get("content", ""))[:20000],
-                }
-            )
-    for slug in LEVER_BOARDS:
-        try:
-            jobs = fetch_json(f"https://api.lever.co/v0/postings/{slug}?mode=json")
-        except Exception as exc:
-            print(f"Lever {slug} failed: {exc}", file=sys.stderr)
-            continue
-        for j in jobs:
-            out.append(
-                {
-                    "id": f"lv-{slug}-{j.get('id')}",
-                    "company": slug.title(),
-                    "title": j.get("text", ""),
-                    "category": (j.get("categories") or {}).get("team", ""),
-                    "locations": [(j.get("categories") or {}).get("location", "")],
-                    "url": j.get("hostedUrl", ""),
-                    "updated": (j.get("createdAt") or time.time() * 1000) / 1000,
-                    "sponsorship": "",
-                    "description": (j.get("descriptionPlain") or "")[:20000],
-                }
-            )
-    return [j for j in out if re.search(r"\bintern", j["title"], re.I)]
+            print(f"{fn.__name__.strip('_')} {slug} failed: {exc}", file=sys.stderr)
+            return []
+
+    with ThreadPoolExecutor(8) as ex:
+        return [j for res in ex.map(run, tasks) for j in res]
 
 
 # ---------------------------------------------------------------- rating
@@ -443,6 +523,12 @@ EMAIL_TEMPLATE = [
 
 
 # ---------------------------------------------------------------- main
+def ckey(j):
+    """Same company + title = same posting, whichever source it came from."""
+    norm = lambda t: re.sub(r"[^a-z0-9]+", " ", t.lower()).strip()
+    return "ck:" + norm(j["company"]) + "|" + norm(j["title"])
+
+
 def load_state():
     if STATE_FILE.exists():
         try:
@@ -484,12 +570,16 @@ def main():
     cutoff = time.time() - args.days * 86400
     chat_ok = False if args.no_ai else ollama_ready()
 
-    jobs = load_simplify() + load_boards()
+    jobs = load_simplify() + load_vanshb03() + load_boards()
+    counts = {}
+    for j in jobs:
+        counts[j["source"]] = counts.get(j["source"], 0) + 1
+    print("Sources:", ", ".join(f"{k} {v}" for k, v in counts.items()), flush=True)
     rated = []
     for j in jobs:
         if j["updated"] < cutoff:
             continue
-        if not args.include_seen and j["id"] in seen:
+        if not args.include_seen and (j["id"] in seen or ckey(j) in seen):
             continue
         s = rate(j)
         if s is not None:
@@ -497,6 +587,11 @@ def main():
             j["ai"] = None
             rated.append(j)
     rated.sort(key=lambda j: (-j["kw"], -j["updated"]))
+    # The same posting often appears in more than one source. Keep one copy (prefer direct company links).
+    uniq = {}
+    for j in sorted(rated, key=lambda j: (j["source"] in ("Simplify", "vanshb03 list"), -j["kw"], -j["updated"])):
+        uniq.setdefault(ckey(j), j)
+    rated = sorted(uniq.values(), key=lambda j: (-j["kw"], -j["updated"]))
 
     if chat_ok:
         summary = resume_summary(resume)
@@ -521,6 +616,8 @@ def main():
                 j["label"] = "Good"
     rated.sort(key=lambda j: (-j["final"], -j["updated"]))
     top = rated[:TOP_N_REPORT]
+    for j in top:
+        j["url"] = resolve_url(j["url"])
 
     small = [c for c in load_small_companies() if args.include_seen or c["id"] not in seen]
     small = small[:MAX_SMALL_COMPANIES]
@@ -532,6 +629,7 @@ def main():
     report = [
         f"Internship report for {today}",
         f"Open postings checked: {len(jobs)}. New matches: {len(rated)}.",
+        "Sources: " + ", ".join(f"{k} {v}" for k, v in counts.items()),
         f"AI: {CHAT_MODEL} reads postings. It runs on this computer." if chat_ok else "AI: off. Keyword matching only.",
         "",
         "PART 1. INTERNSHIP POSTINGS",
@@ -546,6 +644,7 @@ def main():
         report.append(f"{n}. {j['company']}, {j['title']} ({j['label']})")
         report.append(f"   Location: {'; '.join(j['locations']) or 'not listed'}")
         report.append(f"   Updated: {when}")
+        report.append(f"   Source: {j['source']}")
         if j["ai"]:
             report.append(f"   Why: {j['ai']['reason']} (AI score {j['ai']['score']} of 10)")
             if j["ai"]["dealbreakers"]:
@@ -578,7 +677,7 @@ def main():
         report.append("")
 
     (run_dir / "report.txt").write_text("\n".join(report), encoding="utf-8")
-    state["seen"] = sorted(seen | {j["id"] for j in top} | {c["id"] for c in small})
+    state["seen"] = sorted(seen | {j["id"] for j in top} | {ckey(j) for j in top} | {c["id"] for c in small})
     STATE_FILE.write_text(json.dumps(state, indent=1))
     print(f"Done. Report: {run_dir / 'report.txt'}")
     print(f"Postings shown: {len(top)}. Small companies shown: {len(small)}.")

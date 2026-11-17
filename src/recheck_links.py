@@ -5,7 +5,8 @@ import re, sys, urllib.request, urllib.error
 from datetime import date, timedelta
 from pathlib import Path
 
-BASE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent if HERE.name == "src" else HERE   # data (resume, state, output) lives at the repo root
 today = date.today(); out = BASE / "output" / today.isoformat(); out.mkdir(parents=True, exist_ok=True)
 af = BASE / "applied.txt"
 applied = [l.strip().lower() for l in af.read_text().splitlines() if l.strip() and not l.startswith("#")] if af.exists() else []

@@ -23,7 +23,8 @@ PREFERRED = ["san francisco", "bay area", "palo alto", "mountain view", "sunnyva
 BUDGET_SECONDS = 720   # stop searching after this long (free tier is slow) and write what we have
 MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
 # -----------------------------------------------
-BASE = Path(__file__).resolve().parent
+HERE = Path(__file__).resolve().parent
+BASE = HERE.parent if HERE.name == "src" else HERE   # data (resume, state, output) lives at the repo root
 kf = Path.home() / ".config/internship/gemini_key"
 key = os.environ.get("GEMINI_API_KEY") or (kf.read_text().strip() if kf.exists() else "")
 if not key:

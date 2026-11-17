@@ -4,7 +4,7 @@ Description=Internship finder daily run
 [Service]
 Type=oneshot
 WorkingDirectory=%h/internship-finder
-ExecStart=/bin/bash %h/internship-finder/run_daily.sh
+ExecStart=/bin/bash %h/internship-finder/src/run_daily.sh
 TimeoutStartSec=3h 30min
 StandardOutput=append:%h/internship-finder/run.log
 StandardError=append:%h/internship-finder/run.log

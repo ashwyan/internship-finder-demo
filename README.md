@@ -4,6 +4,22 @@ A free, self-hosted tool that finds ML / AI / data internships every morning, ra
 
 > This is a demo version. The resume in `master_resume.example.json` is fake. Put your own details in `master_resume.json` (it is git-ignored, so it never gets pushed).
 
+## Where it looks
+
+It reads several sources at once and removes duplicates (the same company and title from two sources shows once):
+
+| Source | What | Link quality |
+|---|---|---|
+| [SimplifyJobs](https://github.com/SimplifyJobs/Summer2027-Internships) lists | ~4,200 Summer/Spring 2027 internships | links to the posting |
+| [vanshb03 list](https://github.com/vanshb03/Summer2027-Internships) | ~2,100 more | links go through the maintainer's redirect; the finder resolves the ones it shows |
+| Greenhouse boards | 24 companies (Anthropic, Databricks, Stripe, Waymo, ...) | direct from the company |
+| Lever boards | Palantir, Zoox | direct from the company |
+| Ashby boards | OpenAI, Ramp, Notion, Perplexity, Cohere | direct from the company |
+| Y Combinator hiring list | small companies for Part 2 | company site + YC page |
+| Gemini + Google Search *(optional)* | extra leads, not rated | links checked |
+
+Add your own boards in the lists at the top of `src/internship_finder.py` (`GREENHOUSE_BOARDS`, `LEVER_BOARDS`, `ASHBY_BOARDS`). A run reads about 6,700 postings in under 20 seconds in keyword mode. Each posting in the report shows which source it came from.
+
 ## What you get each day
 
 - `output/YYYY-MM-DD/report.txt`
@@ -30,6 +46,26 @@ A free, self-hosted tool that finds ML / AI / data internships every morning, ra
 
 If the server is off or unreachable, the Mac logs it, warns you **once** per day after 11:30, and keeps retrying. When the server is back, missed reports are copied automatically (the timer uses `Persistent=true`, so a missed run still happens).
 
+## Project layout
+
+```
+internship-finder-demo/
+├── quickstart.sh                 # try it: one command
+├── master_resume.example.json    # fake resume; copy to master_resume.json and edit
+├── src/                          # the code
+│   ├── internship_finder.py      #   main finder (sources, rating, report)
+│   ├── gemini_search.py          #   optional: extra leads via Gemini + Google Search
+│   ├── notify_email.py           #   optional: daily summary email
+│   ├── recheck_links.py          #   weekly "is it still open?" check
+│   └── run_daily.sh              #   daily wrapper: runs everything, writes STATUS.txt
+├── deploy/
+│   ├── server/                   # Linux server: systemd timers + installers
+│   └── mac/                      # Mac: pull reports + notifications
+└── examples/sample_report.txt
+```
+
+Your data (resume, state, reports) stays at the top level and is git-ignored.
+
 ## Try it in 60 seconds (macOS, Linux, or Windows via WSL; Python 3.8+ only)
 
 ```bash
@@ -42,14 +78,14 @@ It creates `master_resume.json` from the fake example, runs once, and prints the
 
 Optional local AI: install [Ollama](https://ollama.com), then `ollama pull qwen3:4b` and `ollama pull nomic-embed-text`, and run without `--no-ai`. A full AI run took about 3 minutes on a laptop-class CPU in testing.
 
-Options: `--no-ai`, `--include-seen`, `--days N`, `--keep-days N`.
+Run it directly with `python3 src/internship_finder.py`. Options: `--no-ai`, `--include-seen`, `--days N`, `--keep-days N`.
 
 ## Run it every day on a Linux server
 
 1. Copy this folder to `~/internship-finder` on the server and create your `master_resume.json`.
 2. Make sure Ollama starts at boot (`systemctl is-enabled ollama`).
-3. `bash install_server.sh` installs a systemd user timer (daily 10:17) and a weekly link check, and enables lingering so it runs without you logged in.
-4. Optional: `bash fix_sleep_server.sh` stops a laptop server from sleeping while plugged in.
+3. `bash deploy/server/install_server.sh` installs a systemd user timer (daily 10:17) and a weekly link check, and enables lingering so it runs without you logged in.
+4. Optional: `bash deploy/server/fix_sleep_server.sh` stops a laptop server from sleeping while plugged in.
 
 Check it:
 
@@ -65,14 +101,14 @@ systemctl --user start internship-finder.service      # run it now
 Add the server to `~/.ssh/config` (key-based login, no password), then:
 
 ```bash
-REMOTE=myserver bash install_mac_pull.sh
+REMOTE=myserver bash deploy/mac/install_mac_pull.sh
 tail ~/internship-finder-reports/pull.log
 cat ~/internship-finder-reports/reports/$(ls ~/internship-finder-reports/reports | grep -E '^[0-9]{4}' | tail -1)/report.txt
 ```
 
 ## Optional extras
 
-**Gemini job search** (leads only, not rating, your resume is *not* sent). Put a free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey) in `~/.config/internship/gemini_key` (mode 600). It runs after the finder, one Google-Search query per US region. Edit `ROLES`, `TERM`, `REGIONS`, `PREFERRED` at the top of `gemini_search.py`. It skips postings seen on earlier days, dead links, non-intern titles and anything in `applied.txt`.
+**Gemini job search** (leads only, not rating, your resume is *not* sent). Put a free key from [aistudio.google.com/apikey](https://aistudio.google.com/apikey) in `~/.config/internship/gemini_key` (mode 600). It runs after the finder, one Google-Search query per US region. Edit `ROLES`, `TERM`, `REGIONS`, `PREFERRED` at the top of `src/gemini_search.py`. It skips postings seen on earlier days, dead links, non-intern titles and anything in `applied.txt`.
 
 **Email summary.** Create `~/.config/internship/gmail` with two lines: your Gmail address and a [Google App Password](https://myaccount.google.com/apppasswords). You get one short email per day.
 
@@ -82,7 +118,7 @@ None of the extras can break the main run. A missing key skips the step, and a f
 
 ## Change what it searches
 
-Edit the settings at the top of `internship_finder.py`: `TERMS`, `BAY_AREA`, `OTHER_TARGETS` (cities, now the whole US), title keywords, days back, result counts, company size range, and `SCHOOL`.
+Edit the settings at the top of `src/internship_finder.py`: `TERMS`, `BAY_AREA`, `OTHER_TARGETS` (cities, now the whole US), title keywords, days back, result counts, company size range, and `SCHOOL`.
 
 ## Troubleshooting
 
@@ -111,7 +147,8 @@ Everything runs on your own machines. Without the optional extras, nothing leave
 
 - Internship listings: the community-maintained [SimplifyJobs Summer 2027 Internships](https://github.com/SimplifyJobs/Summer2027-Internships) list.
 - Small-company list: the free [yc-oss API](https://github.com/yc-oss/api) of Y Combinator companies.
-- Optional direct company boards: public Greenhouse and Lever job APIs.
+- Company boards: public Greenhouse, Lever and Ashby job APIs.
+- The [vanshb03](https://github.com/vanshb03/Summer2027-Internships) community internship list.
 - Local AI: [Ollama](https://ollama.com) with `qwen3:4b` and `nomic-embed-text`.
 
 This project is not affiliated with any of them. Please respect their terms and rate limits.
