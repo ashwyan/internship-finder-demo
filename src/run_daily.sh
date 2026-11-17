@@ -30,14 +30,17 @@ if [ "$status" != FAILED ]; then
   if grep -q "No new matches today" "$OUT/report.txt"; then add "no new matches today"
   else n=$(grep -oE "New matches: [0-9]+" "$OUT/report.txt" | grep -oE "[0-9]+"); add "${n:-?} new matches"; fi
 fi
+mkdir -p "$OUT"
+write_status() { printf '%s\n%s\n' "$status" "${notes%; }" > "$OUT/STATUS.txt"; }
+write_status    # the Mac notifies from this point on, so nothing optional below can delay it
+
 # Optional Gemini job SEARCH (skipped silently if no key; a failure only adds a warning)
 if [ "$status" != FAILED ] && [ -f "$SRC/gemini_search.py" ]; then
   timeout 1200 /usr/bin/python3 "$SRC/gemini_search.py"; g=$?
   [ $g -eq 0 ] && add "Gemini search: $(cat "$OUT/.gemini_count" 2>/dev/null || echo 0) extra companies"
   [ $g -eq 1 ] && warn "Gemini search failed (main report is still fine)"
+  write_status
 fi
-mkdir -p "$OUT"
-printf '%s\n%s\n' "$status" "${notes%; }" > "$OUT/STATUS.txt"
 [ -f "$SRC/notify_email.py" ] && timeout 60 /usr/bin/python3 "$SRC/notify_email.py"
 echo "STATUS: $status - ${notes%; }"
 [ "$status" = FAILED ] && exit 1
